@@ -1,75 +1,28 @@
 from fastapi import APIRouter, Query
 import requests
 
-from app.api.v1.endpoints.common import get_common_info
-from app.models.tapd import UpdateBugRequest
+from app.api.v1.endpoints.common import download_attachment, get_attacments, get_info
+from app.models.tapd import UpdateBugDescriptionRequest, UpdateBugRequest, UpdateBugStatusRequest
 from app.util import cookie
 import config
 
 router = APIRouter(prefix="/bugs", tags=["bugs"])
 
 @router.get("/")
-def get_bug_info(
+def get_bug_infos(
     workspace_id: int = Query(..., description="项目ID"),
     entity_id: int = Query(..., description="实体ID"),
-    entity_type: str = Query("bug", description="实体类型"),
-):
+    ):
     """
-    查询缺陷详情
+    查询缺陷信息
     """
-    get_info_url = f"{config.TAPD_API_CONFIG['base_url']}/aggregation/workitem_aggregation/get_info"
-    cookies = cookie.load_cookies_from_file()
+    return get_info(
+        workspace_id=workspace_id,
+        entry_id=entity_id,
+        entry_type="bug"
+    )
 
-    data = {
-        "workspace_id": workspace_id,
-        "entity_id": entity_id,
-        "entity_type": entity_type,
-        "api_controller_prefix": "",
-        "enable_description": "true",
-        "is_detail": 1,
-        "blacklist_fields": [],
-        "identifier": "app_for_editor,app_for_obj_more,app_for_obj_dialog_dropdown,app_for_obj_detail_panel,app_for_obj_detail_bottom_card,app_for_obj_attachment,app_for_obj_copy_link,app_for_obj_additional_panel",
-        "installed_app_entity": {
-            "obj_id": entity_id,
-            "obj_type": entity_type,
-            "obj_name": "缺陷"
-        },
-        "has_edit_rule_fields": [],
-        "is_archived": 0,
-        "is_assistant_exec_log": 1,
-        "dsc_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else ""
-    }
 
-    headers = {
-        "User-Agent": config.TAPD_API_CONFIG["user_agent"],
-        "Cookie": cookie.dict_to_cookie_str(cookies) if cookies else "",
-    }
-
-    try:
-        response = requests.post(
-            get_info_url,
-            headers=headers,
-            json=data
-        )
-
-        if response.status_code == 200:
-            result = response.json()
-            return {
-                "msg": "success",
-                "result": result
-            }
-        else:
-            result = response.text
-            return {
-                "msg": "error",
-                "error": result
-            }
-    except Exception as e:
-        return {
-            "msg": "error",
-            "error": str(e)
-        }
-    
 
 @router.put("/")
 def update_bug(bug: UpdateBugRequest):
@@ -84,22 +37,17 @@ def update_bug(bug: UpdateBugRequest):
     }
 
     if bug.field_type == "status":
-        common_info = get_common_info(
-            workspace_id=bug.workspace_id,
-            entry_id=bug.id,
-            entry_type="bug"
-        )
-
-        if common_info["msg"] != "success":
+        # 更新状态
+        # 获取当前状态
+        current_status = get_bug_status(bug.workspace_id, bug.id)
+        if str(current_status["meta"]["code"]) != "0":
             return {
-                "msg": "error",
-                "error": common_info["error"]
+                "meta": current_status["meta"],
             }
 
-        current_status = common_info["result"]["data"]["get_info_ret"]["data"]["Bug"]["status"]
+        current_status = current_status["result"]
 
-
-
+        # 更新状态
         change_bug_status_url = f"{config.TAPD_API_CONFIG['base_url']}/entity/workflow/change_bug_status"
         change_bug_status_data = {
             "workspace_id": bug.workspace_id,
@@ -135,22 +83,32 @@ def update_bug(bug: UpdateBugRequest):
 
             if response.status_code == 200:
                 result = response.json()
+                if str(result["meta"]["code"]) != "0":
+                    return {
+                        "meta": result["meta"],
+                    }
+
                 return {
-                    "msg": "success",
-                    "result": result
+                    "meta": result["meta"],
+                    "result": result["data"]
                 }
             else:
                 result = response.text
                 return {
-                    "msg": "error",
-                    "error": result
+                    "meta": {
+                        "code": response.status_code,
+                        "message": f"change_bug_status_error: {result}"
+                    }
                 }
         except Exception as e:  
             return {
-                "msg": "error",
-                "error": str(e)
+                "meta": {
+                    "code": 500,
+                    "message": f"change_bug_status_error: {str(e)}"
+                }
             }
     else:
+        # 更新其他字段
         inline_update_url = f"{config.TAPD_API_CONFIG['base_url']}/entity/bugs/inline_update"
 
         inline_update_data = {
@@ -172,18 +130,121 @@ def update_bug(bug: UpdateBugRequest):
 
             if response.status_code == 200:
                 result = response.json()
+                if str(result["meta"]["code"]) != "0":
+                    return {
+                        "meta": {
+                            "code": result["meta"]["code"],
+                            "message": f"inline_update_error: {result['meta']['message']}"
+                        },
+                    }
+
                 return {
-                    "msg": "success",
-                    "result": result
+                    "meta": result["meta"],
+                    "result": result["data"]
                 }
             else:
                 result = response.text
                 return {
-                    "msg": "error",
-                    "error": result
+                    "meta": {
+                        "code": response.status_code,
+                        "message": f"inline_update_error: {result}"
+                    }
                 }
         except Exception as e:
             return {
-                "msg": "error",
-                "error": str(e)
+                "meta": {
+                    "code": 500,
+                    "message": f"inline_update_error: {str(e)}"
+                }
             }
+
+
+@router.get("/status_list")
+def get_bug_status_list(workspace_id: int, entity_id: int):
+    """
+    查询缺陷状态列表
+    """
+    infos = get_bug_infos(workspace_id, entity_id)
+    if str(infos["meta"]["code"]) != "0":
+        return {
+            "meta": infos["meta"],
+        }
+
+    return {
+        "meta": infos["meta"],
+        "result": list(set(infos["result"]["get_info_ret"]["data"]["Bug"]["flows"].split("|")))
+    }
+
+
+@router.get("/status")
+def get_bug_status(workspace_id: int, entity_id: int):
+    """
+    查询缺陷状态
+    """
+    infos = get_bug_infos(workspace_id, entity_id)
+    if str(infos["meta"]["code"]) != "0":
+        return {
+            "meta": infos["meta"],
+        }
+    
+    return {
+        "meta": infos["meta"],
+        "result": infos["result"]["get_info_ret"]["data"]["Bug"]["status"]
+    }
+
+@router.put("/status")
+def update_bug_status(body: UpdateBugStatusRequest):
+    """
+    更新缺陷状态
+    """
+    bug = UpdateBugRequest(
+        workspace_id=body.workspace_id,
+        id=body.id,
+        field_type="status",
+        field_value=body.status
+    )
+    return update_bug(bug)
+
+@router.get("/description")
+def get_bug_description(workspace_id: int, entity_id: int):
+    """
+    查询缺陷描述
+    """
+    infos = get_bug_infos(workspace_id, entity_id)
+    if str(infos["meta"]["code"]) != "0":
+        return {
+            "meta": infos["meta"],
+        }
+    return {
+        "meta": infos["meta"],
+        "result": infos["result"]["get_info_ret"]["data"]["Bug"]["description"]
+    }
+
+@router.put("/description")
+def update_bug_description(body: UpdateBugDescriptionRequest):
+    """
+    更新缺陷描述
+    """
+    bug = UpdateBugRequest(
+        workspace_id=body.workspace_id,
+        id=body.id,
+        field_type="description",
+        field_value=body.description
+    )
+    return update_bug(bug)
+
+
+@router.get("/attachments")
+def get_bug_attachments(workspace_id: int, entity_id: int):
+    """
+    查询缺陷附件信息
+    """
+    return get_attacments(workspace_id, "bug", entity_id)
+
+
+@router.get("/attachment/download")
+def download_bug_attachment(workspace_id: int, attachment_id: int):
+    """
+    下载缺陷附件
+    """
+    return download_attachment(workspace_id, "bug", attachment_id)

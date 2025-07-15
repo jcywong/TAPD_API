@@ -4,7 +4,7 @@ from typing import Optional, List
 
 import requests
 
-from app.api.v1.endpoints.common import get_common_info
+from app.api.v1.endpoints.common import get_info
 from app.util import cookie
 import config
 from app.models.tapd import AddCommentRequest, UpdateCommentRequest
@@ -14,31 +14,38 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 
 @router.get("/")
 def get_comments(
-    entry_type: Optional[str] = Query(description="评论类型（如bug|bug_remark|story|task，多类型用|分隔）"),
+    workspace_id: int = Query(..., description="项目ID"),
+    entry_type: Optional[str] = Query(description="评论类型（如bug|story"),
     entry_id: Optional[int] = Query(..., description="评论所依附的业务对象实体id"),
-    workspace_id: int = Query(..., description="项目ID，必填"),
-
-):
+    ):
     """
     查询评论列表
     """
-    result = get_common_info(
+    result = get_info(
         entry_type=entry_type,
         entry_id=entry_id,
         workspace_id=workspace_id
     )
 
-    if result["msg"] == "success":
-        comments = result["result"]["data"]["get_info_ret"]["data"]["comment_list"]["comments"]
+    if str(result["meta"]["code"]) != "0":
         return {
-            "msg": "success",
+            "meta": result["meta"],
+        }
+
+    try:
+        comments = result["result"]["get_info_ret"]["data"]["comment_list"]["comments"]
+        return {
+            "meta": result["meta"],
             "result": comments
         }
-    else:
+    except Exception as e:
         return {
-            "msg": "error",
-            "error": result["error"]
+            "meta": {
+                "code": 500,
+                "message": f"get_comments_error: {str(e)}"
+            }
         }
+
 
 @router.post("/")
 def add_comment(body: AddCommentRequest):
@@ -73,20 +80,29 @@ def add_comment(body: AddCommentRequest):
 
         if response.status_code == 200:
             result = response.json()
+            if str(result["meta"]["code"]) != "0":
+                return {
+                    "meta": result["meta"],
+                }
+
             return {
-                "msg": "success",
-                "result": result
+                "meta": result["meta"],
+                "result": result["data"]
             }   
         else:
             result = response.text
             return {
-                "msg": "error",
-                "error": result
+                "meta": {
+                    "code": response.status_code,
+                    "message": f"add_comment_error: {result}"
+                }
             }
     except Exception as e:
         return {
-            "msg": "error",
-            "error": str(e)
+            "meta": {
+                "code": 500,
+                "message": f"add_comment_error: {str(e)}"
+            }
         }   
 
 

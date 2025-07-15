@@ -1,26 +1,38 @@
 from typing import Optional
-from fastapi import Query
+from fastapi import Query, Response
 import requests
 from app.util import cookie
 import config
+from fastapi import APIRouter
 
+router = APIRouter(prefix="/common", tags=["common"])
 
 entry_type_map = {
     "bug": "缺陷",
-    "bug_remark": "缺陷备注",
     "story": "需求",
     "task": "任务"
 }
 
-def get_common_info(
-    entry_type: Optional[str] = Query(description="评论类型（如bug|bug_remark|story|tasks，多类型用|分隔）"),
-    entry_id: Optional[int] = Query(..., description="评论所依附的业务对象实体id"),
-    workspace_id: int = Query(..., description="项目ID，必填"),
-):
+@router.get("/")
+def get_info(
+    workspace_id: int = Query(..., description="项目ID"),
+    entry_type: Optional[str] = Query(description="类型（如bug|story)"),
+    entry_id: Optional[int] = Query(..., description="实体id"),
+    ):
     """
-    查询评论列表
+    通用获取实体信息
+
+    返回信息：
+    1. get_tab_setting_ret: tab区域信息
+    2. get_workitem_basic_info_ret: 激活 tab 区域信息
+    3. installed_app_entrance_ret: 安装的 app 入口信息（腾讯会议）
+    4. personal_copy_link_display_configs: 个人复制链接配置信息
+    5. get_info_ret: 详细信息、基础信息、标签、附件、评论
+    6. get_last_execute_detail_ret: 最近执行详情
+    7. workspace：项目信息
     """
     common_get_info_url = f"{config.TAPD_API_CONFIG['base_url']}/aggregation/workitem_aggregation/common_get_info"
+    get_info_url = f"{config.TAPD_API_CONFIG['base_url']}/aggregation/workitem_aggregation/get_info"
     cookies = cookie.load_cookies_from_file()
 
     # 构建 请求体
@@ -52,28 +64,126 @@ def get_common_info(
     }
 
     try:
-        response = requests.post(
+        common_get_info_response = requests.post(
             common_get_info_url,
             headers=headers,
             json=data
         )
 
     
-        if response.status_code == 200:
-            result = response.json()
+        if common_get_info_response.status_code == 200:
+            common_get_info_result = common_get_info_response.json()
 
-            return {
-                "msg": "success",
-                "result": result,
-            }
+            if str(common_get_info_result["meta"]["code"]) != "0":
+                return {
+                    "meta": common_get_info_result["meta"],
+                }
+            
+            # 增加 get_info 请求
+            try:
+                get_info_response = requests.post(
+                    get_info_url,
+                    headers=headers,
+                    json=data
+                )
+
+                if get_info_response.status_code == 200:
+                    get_info_result = get_info_response.json()
+
+                    if str(get_info_result["meta"]["code"]) != "0":
+                        return {
+                            "meta": get_info_result["meta"],
+                        }
+
+                    return {
+                        "meta": get_info_result["meta"],
+                        "result": {
+                            **common_get_info_result["data"],
+                            **get_info_result["data"]
+                        }
+                    }
+                else:
+                    get_info_result = get_info_response.text
+                    return {
+                        "meta": {
+                            "code": get_info_response.status_code,
+                            "message": f"get_info_error: {get_info_result}"
+                        }
+                    }
+            except Exception as e:
+                return {
+                    "meta": {
+                        "code": 500,
+                        "message": f"get_info_error: {str(e)}"
+                    }
+                }
         else:
-            result = response.text
+            result = common_get_info_response.text
             return {
-                "msg": "error",
-                "error": result
+                "meta": {
+                    "code": common_get_info_response.status_code,
+                    "message": f"common_get_info_error: {result}"
+                }
             }
     except Exception as e:
         return {
-            "msg": "error",
-            "error": str(e)
+            "meta": {
+                "code": 500,
+                "message": f"common_get_info_error: {str(e)}"
+            }
+        }
+
+
+def get_attacments(workspace_id: int, entity_type: str, entity_id: int):
+    """
+    获取附件
+    """
+    infos = get_info(workspace_id, entity_type, entity_id)
+    if str(infos["meta"]["code"]) != "0":
+        return {
+            "meta": infos["meta"],
+        }
+
+    try:
+        attachments = infos["result"]["get_info_ret"]["data"]["attachment_list"]["attachments"]
+        return {
+            "meta": infos["meta"],
+            "result": attachments
+        }
+    except Exception as e:
+        return {
+            "meta": {
+                "code": 500,
+                "message": f"get_attacments_error: {str(e)}"
+            }
+        }
+
+        
+def download_attachment(workspace_id: int, entity_type: str, entity_id: int):
+    """
+    下载需求附件
+    """
+    dowanload_url = f"https://www.tapd.cn/{workspace_id}/attachments/preview_attachments/{entity_id}/{entity_type}？"
+    cookies = cookie.load_cookies_from_file()
+    headers = {
+        "User-Agent": config.TAPD_API_CONFIG["user_agent"],
+        "Cookie": cookie.dict_to_cookie_str(cookies) if cookies else "",
+    }
+
+    response = requests.get(
+        dowanload_url,
+        headers=headers,
+        cookies=cookies
+    )
+    if response.status_code == 200:
+        return Response(
+            content=response.content,
+            media_type=response.headers["Content-Type"]
+        )
+    else:
+        return {
+            "meta": {
+                "code": response.status_code,
+                "message": f"download_attachment_error: {response.text}"
+            }
         }
