@@ -160,7 +160,10 @@ def update_story(story: UpdateStoryRequest):
 
 
 @router.get("/status_list")
-def get_story_status_list(workspace_id: int, entity_id: int):
+def get_story_status_list(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询需求状态列表
     """
@@ -177,7 +180,10 @@ def get_story_status_list(workspace_id: int, entity_id: int):
 
 
 @router.get("/status")
-def get_story_status(workspace_id: int, entity_id: int):
+def get_story_status(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询需求状态
     """
@@ -207,7 +213,10 @@ def update_story_status(body: UpdateStoryStatusRequest):
     return update_story(story)
 
 @router.get("/description")
-def get_story_description(workspace_id: int, entity_id: int):
+def get_story_description(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询需求描述
     """

@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 
+from app.api.v1.endpoints.common import TaskStatusEnum
+
 
 class AddCommentRequest(BaseModel):
     workspace_id: int = Field(..., description="项目ID")
@@ -51,4 +53,21 @@ class UpdateStoryStatusRequest(BaseModel):
 class UpdateStoryDescriptionRequest(BaseModel):
     workspace_id: int = Field(..., description="项目ID")
     id: int = Field(..., description="需求ID")
+    description: str = Field(..., description="描述")
+
+class UpdateTaskRequest(BaseModel):
+    workspace_id: int = Field(..., description="项目ID")
+    id: int = Field(..., description="任务ID")
+    field_type: str = Field(..., description="字段类型（如status）")
+    field_value: str = Field(..., description="字段值")
+
+
+class UpdateTaskStatusRequest(BaseModel):
+    workspace_id: int = Field(..., description="项目ID")
+    id: int = Field(..., description="任务ID")
+    status: TaskStatusEnum = Field(..., description="状态（progressing/open/done）")
+
+class UpdateTaskDescriptionRequest(BaseModel):
+    workspace_id: int = Field(..., description="项目ID")
+    id: int = Field(..., description="任务ID")
     description: str = Field(..., description="描述")

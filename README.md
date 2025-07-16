@@ -13,6 +13,7 @@ TAPD_API/
 │   │           ├── comments.py     # 评论相关接口
 │   │           ├── bugs.py         # bug相关接口
 │   │           ├── stories.py      # story相关接口
+│   │           ├── tasks.py        # task相关接口
 │   │           ├── tcases.py       # tcases相关接口
 │   │           ├── common.py       # 通用接口
 │   │           └── ...             # 其他业务接口

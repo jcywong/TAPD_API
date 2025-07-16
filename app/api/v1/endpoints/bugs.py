@@ -160,7 +160,10 @@ def update_bug(bug: UpdateBugRequest):
 
 
 @router.get("/status_list")
-def get_bug_status_list(workspace_id: int, entity_id: int):
+def get_bug_status_list(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询缺陷状态列表
     """
@@ -177,7 +180,10 @@ def get_bug_status_list(workspace_id: int, entity_id: int):
 
 
 @router.get("/status")
-def get_bug_status(workspace_id: int, entity_id: int):
+def get_bug_status(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询缺陷状态
     """
@@ -206,7 +212,10 @@ def update_bug_status(body: UpdateBugStatusRequest):
     return update_bug(bug)
 
 @router.get("/description")
-def get_bug_description(workspace_id: int, entity_id: int):
+def get_bug_description(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询缺陷描述
     """
@@ -235,7 +244,10 @@ def update_bug_description(body: UpdateBugDescriptionRequest):
 
 
 @router.get("/attachments")
-def get_bug_attachments(workspace_id: int, entity_id: int):
+def get_bug_attachments(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     查询缺陷附件信息
     """
@@ -243,7 +255,10 @@ def get_bug_attachments(workspace_id: int, entity_id: int):
 
 
 @router.get("/attachment/download")
-def download_bug_attachment(workspace_id: int, attachment_id: int):
+def download_bug_attachment(
+    workspace_id: int = Query(..., description="项目ID"),
+    attachment_id: int = Query(..., description="附件ID"),
+    ):
     """
     下载缺陷附件
     """

@@ -17,6 +17,12 @@ entry_type_map = {
 class EntryTypeEnum(str, Enum):
     bug = "bug"
     story = "story"
+    task = "task"
+
+class TaskStatusEnum(str, Enum):
+    progressing = "progressing"
+    open = "open"
+    done = "done"
 
 @router.get("/")
 def get_info(
@@ -138,7 +144,11 @@ def get_info(
         }
 
 
-def get_attacments(workspace_id: int, entity_type: str, entity_id: int):
+def get_attacments(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_type: str = Query(..., description="实体类型"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     获取附件
     """
@@ -163,7 +173,11 @@ def get_attacments(workspace_id: int, entity_type: str, entity_id: int):
         }
 
         
-def download_attachment(workspace_id: int, entity_type: str, entity_id: int):
+def download_attachment(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_type: str = Query(..., description="实体类型"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
     """
     下载需求附件
     """
