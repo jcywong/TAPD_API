@@ -15,7 +15,7 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 @router.get("/")
 def get_comments(
     workspace_id: int = Query(..., description="项目ID"),
-    entry_type: EntryTypeEnum = Query(description="评论类型（如bug|story）"),
+    entry_type: EntryTypeEnum = Query(description="评论类型（如bug|story|task）"),
     entry_id: int = Query(..., description="评论所依附的业务对象实体id"),
     ):
     """
