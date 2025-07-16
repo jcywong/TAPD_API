@@ -73,7 +73,7 @@ def update_story(story: UpdateStoryRequest):
                         "owner": ""
                     }
                 },
-                "dsc_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else ""
+                "dsc_token": cookies["dsc-token"] if cookies and 'dsc-token' in cookies else ""
             }
 
         try:
@@ -116,7 +116,7 @@ def update_story(story: UpdateStoryRequest):
         inline_update_data = {
             "workspace_id": story.workspace_id,
             "id": story.id,
-            "dec_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else "",
+            "dec_token": cookies["dsc-token"] if cookies and 'dsc-token' in cookies else "",
             "field": story.field_type,
             "value": story.field_value
         }

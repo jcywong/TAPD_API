@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 from fastapi import Query, Response
 import requests
@@ -12,6 +13,10 @@ entry_type_map = {
     "story": "需求",
     "task": "任务"
 }
+
+class EntryTypeEnum(str, Enum):
+    bug = "bug"
+    story = "story"
 
 @router.get("/")
 def get_info(
@@ -54,9 +59,8 @@ def get_info(
         "is_archived": 0,
         "is_assistant_exec_log": 1,
         "app_id": "",
-        "dsc_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else ""
+        "dsc_token": cookies["dsc-token"] if cookies and "dsc-token" in cookies else ""
     }
-
     # 发送请求
     headers = {
         "User-Agent": config.TAPD_API_CONFIG["user_agent"],

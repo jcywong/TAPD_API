@@ -71,7 +71,7 @@ def update_bug(bug: UpdateBugRequest):
                     "de": ""
                 }
             },
-            "dsc_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else ""
+            "dsc_token": cookies["dsc-token"] if cookies and 'dsc-token' in cookies else ""
         }
 
         try:
@@ -113,7 +113,7 @@ def update_bug(bug: UpdateBugRequest):
 
         inline_update_data = {
             "workspace_id": bug.workspace_id,
-            "dec_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else "",
+            "dec_token": cookies["dsc-token"] if cookies and 'dsc-token' in cookies else "",
             "data": {
                 "id": bug.id,
                 "field": bug.field_type,

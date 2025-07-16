@@ -4,7 +4,7 @@ from typing import Optional, List
 
 import requests
 
-from app.api.v1.endpoints.common import get_info
+from app.api.v1.endpoints.common import EntryTypeEnum, get_info
 from app.util import cookie
 import config
 from app.models.tapd import AddCommentRequest, UpdateCommentRequest
@@ -15,8 +15,8 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 @router.get("/")
 def get_comments(
     workspace_id: int = Query(..., description="项目ID"),
-    entry_type: Optional[str] = Query(description="评论类型（如bug|story"),
-    entry_id: Optional[int] = Query(..., description="评论所依附的业务对象实体id"),
+    entry_type: EntryTypeEnum = Query(description="评论类型（如bug|story）"),
+    entry_id: int = Query(..., description="评论所依附的业务对象实体id"),
     ):
     """
     查询评论列表
@@ -63,7 +63,7 @@ def add_comment(body: AddCommentRequest):
         "description_type": 1,
         "root_id": body.root_id,
         "reply_id": body.reply_id,
-        "dsc_token": cookies["dsc-token"] if 'dsc-token' in cookies.keys() else ""
+        "dsc_token": cookies["dsc-token"] if cookies and "dsc-token" in cookies else ""
     }
 
     headers = {
