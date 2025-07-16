@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 import requests
 
-from app.api.v1.endpoints.common import download_attachment, get_attacments, get_info
+from app.api.v1.endpoints.common import EntryTypeEnum, download_attachment, get_attacments, get_info
 from app.models.tapd import UpdateTaskDescriptionRequest, UpdateTaskRequest, UpdateTaskStatusRequest
 from app.util import cookie
 import config
@@ -19,7 +19,7 @@ def get_task_infos(
     return get_info(
         workspace_id=workspace_id,
         entry_id=entity_id,
-        entry_type="task"
+        entry_type=EntryTypeEnum.task
     )
 
 @router.put("/")
@@ -203,7 +203,7 @@ def get_task_attachments(
     """
     查询任务附件信息
     """
-    return get_attacments(workspace_id, "task", entity_id)
+    return get_attacments(workspace_id, EntryTypeEnum.task, entity_id)
 
 @router.get("/attachment/download")
 def download_task_attachment(
@@ -213,4 +213,4 @@ def download_task_attachment(
     """
     下载任务附件
     """
-    return download_attachment(workspace_id, "task", attachment_id)
+    return download_attachment(workspace_id, EntryTypeEnum.task, attachment_id)

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 import requests
 
-from app.api.v1.endpoints.common import download_attachment, get_attacments, get_info
+from app.api.v1.endpoints.common import EntryTypeEnum, download_attachment, get_attacments, get_info
 from app.models.tapd import UpdateStoryDescriptionRequest, UpdateStoryRequest, UpdateStoryStatusRequest
 from app.util import cookie
 import config
@@ -19,7 +19,7 @@ def get_story_infos(
     return get_info(
         workspace_id=workspace_id,
         entry_id=entry_id,
-        entry_type="story"
+        entry_type=EntryTypeEnum.story
     )
 
 
@@ -249,7 +249,7 @@ def get_story_attachments(workspace_id: int, entity_id: int):
     """
     查询需求附件
     """
-    return get_attacments(workspace_id, "story", entity_id)
+    return get_attacments(workspace_id, EntryTypeEnum.story, entity_id)
 
 
 @router.get("/attachment/download")
@@ -257,4 +257,4 @@ def download_story_attachment(workspace_id: int, attachment_id: int):
     """
     下载需求附件
     """
-    return download_attachment(workspace_id, "story", attachment_id)
+    return download_attachment(workspace_id, EntryTypeEnum.story, attachment_id)

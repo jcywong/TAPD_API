@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 import requests
 
-from app.api.v1.endpoints.common import download_attachment, get_attacments, get_info
+from app.api.v1.endpoints.common import EntryTypeEnum, download_attachment, get_attacments, get_info
 from app.models.tapd import UpdateBugDescriptionRequest, UpdateBugRequest, UpdateBugStatusRequest
 from app.util import cookie
 import config
@@ -19,7 +19,7 @@ def get_bug_infos(
     return get_info(
         workspace_id=workspace_id,
         entry_id=entity_id,
-        entry_type="bug"
+        entry_type=EntryTypeEnum.bug
     )
 
 
@@ -251,7 +251,7 @@ def get_bug_attachments(
     """
     查询缺陷附件信息
     """
-    return get_attacments(workspace_id, "bug", entity_id)
+    return get_attacments(workspace_id, EntryTypeEnum.bug, entity_id)
 
 
 @router.get("/attachment/download")
@@ -262,4 +262,4 @@ def download_bug_attachment(
     """
     下载缺陷附件
     """
-    return download_attachment(workspace_id, "bug", attachment_id)
+    return download_attachment(workspace_id, EntryTypeEnum.bug, attachment_id)

@@ -27,7 +27,7 @@ class TaskStatusEnum(str, Enum):
 @router.get("/")
 def get_info(
     workspace_id: int = Query(..., description="项目ID"),
-    entry_type: Optional[str] = Query(description="类型（如bug|story)"),
+    entry_type: EntryTypeEnum = Query(..., description="类型（如bug|story|task）"),
     entry_id: Optional[int] = Query(..., description="实体id"),
     ):
     """
@@ -146,7 +146,7 @@ def get_info(
 
 def get_attacments(
     workspace_id: int = Query(..., description="项目ID"),
-    entity_type: str = Query(..., description="实体类型"),
+    entity_type: EntryTypeEnum = Query(..., description="实体类型"),
     entity_id: int = Query(..., description="实体ID"),
     ):
     """
