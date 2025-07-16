@@ -159,13 +159,13 @@ def update_story(story: UpdateStoryRequest):
             }
 
 
-@router.get("/status_list")
-def get_story_status_list(
+@router.get("/status_dict")
+def get_story_status_dict(
     workspace_id: int = Query(..., description="项目ID"),
     entity_id: int = Query(..., description="实体ID"),
     ):
     """
-    查询需求状态列表
+    查询需求状态字典
     """
     infos = get_story_infos(workspace_id, entity_id)
     if str(infos["meta"]["code"]) != "0":
@@ -175,7 +175,7 @@ def get_story_status_list(
 
     return {
         "meta": infos["meta"],
-        "result": list(set(infos["result"]["get_info_ret"]["data"]["Story"]["flows"].split("|")))
+        "result": infos["result"]["get_info_ret"]["data"]["workspace_configs"]["workflow_infos"]["story"]["status_map"][str(workspace_id)]
     }
 
 

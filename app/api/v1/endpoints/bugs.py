@@ -159,13 +159,13 @@ def update_bug(bug: UpdateBugRequest):
             }
 
 
-@router.get("/status_list")
-def get_bug_status_list(
+@router.get("/status_dict")
+def get_bug_status_dict(
     workspace_id: int = Query(..., description="项目ID"),
     entity_id: int = Query(..., description="实体ID"),
     ):
     """
-    查询缺陷状态列表
+    查询缺陷状态字典
     """
     infos = get_bug_infos(workspace_id, entity_id)
     if str(infos["meta"]["code"]) != "0":
@@ -175,7 +175,7 @@ def get_bug_status_list(
 
     return {
         "meta": infos["meta"],
-        "result": list(set(infos["result"]["get_info_ret"]["data"]["Bug"]["flows"].split("|")))
+        "result": infos["result"]["get_info_ret"]["data"]["workspace_configs"]["workflow_infos"]["bug"]["status_map"][str(workspace_id)]
     }
 
 

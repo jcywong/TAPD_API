@@ -117,6 +117,26 @@ def update_task(task: UpdateTaskRequest):
                 }
             }
 
+
+@router.get("/status_dict")
+def get_task_status_dict(
+    workspace_id: int = Query(..., description="项目ID"),
+    entity_id: int = Query(..., description="实体ID"),
+    ):
+    """
+    查询任务状态字典
+    """
+    infos = get_task_infos(workspace_id, entity_id)
+    if str(infos["meta"]["code"]) != "0":
+        return {
+            "meta": infos["meta"],
+        }
+    
+    return {
+        "meta": infos["meta"],
+        "result": infos["result"]["get_info_ret"]["data"]["workspace_configs"]["workflow_infos"]["task"]["status_map"]
+    }   
+
 @router.get("/status")
 def get_task_status(workspace_id: int, entity_id: int):
     """
